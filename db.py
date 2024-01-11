@@ -2,11 +2,73 @@ from enum import Enum
 
 import PySimpleGUI as sg
 import sqlite3
-from sqlite3 import Connection, Cursor
+from sqlite3 import Cursor, OperationalError
 
-from config import DEBUG, DB_NAME, datetime, date
+from config import date, DEBUG, DB_NAME, DB_CFG_KEY_VERSION, DB_VERSION
 
 con = sqlite3.connect(DB_NAME)
+db_ver = 0
+try:
+    cur = con.cursor()
+    db_ver = cur.execute(f"SELECT value FROM config WHERE `key` = {DB_CFG_KEY_VERSION}").fetchone()
+    db_ver = int(db_ver[0])
+    cur.close()
+except OperationalError as e:
+    print('Failed to open DB, recreating')
+    db_ver = -1
+if db_ver < 0:
+    db_ver = DB_VERSION
+    con.execute('CREATE TABLE "config" ("key" INTEGER NOT NULL UNIQUE, "value" TEXT)')
+    con.execute('INSERT INTO "config" ("key", "value") VALUES (1, "1")')
+    con.execute('CREATE TABLE "group" ("id" INTEGER, "name" TEXT, PRIMARY KEY("id" AUTOINCREMENT))')
+    con.execute('CREATE TABLE "teacher" ("id" INTEGER, "name" TEXT, PRIMARY KEY("id" AUTOINCREMENT))')
+    con.execute('CREATE TABLE "study" ("id"	INTEGER, "name"	TEXT, PRIMARY KEY("id" AUTOINCREMENT))')
+    con.execute('CREATE TABLE "semester" ("id" INTEGER, "date_start" NUMERIC, PRIMARY KEY("id" AUTOINCREMENT))')
+    con.commit()
+    con.execute('''
+    CREATE TABLE "teacher_study" (
+        "id"	INTEGER,
+        "teacher_id"	INTEGER NOT NULL,
+        "study_id"	INTEGER NOT NULL,
+        FOREIGN KEY("study_id") REFERENCES "study"("id"),
+        FOREIGN KEY("teacher_id") REFERENCES "teacher"("id"),
+        PRIMARY KEY("id" AUTOINCREMENT)
+    )
+    ''')
+    con.commit()
+    con.execute('''
+    CREATE TABLE "plan" (
+        "id"	INTEGER,
+        "hours"	INTEGER NOT NULL DEFAULT 0,
+        "semester_id"	INTEGER NOT NULL,
+        "teacher_study_id"	INTEGER NOT NULL,
+        "group_id"	INTEGER NOT NULL,
+        PRIMARY KEY("id" AUTOINCREMENT),
+        FOREIGN KEY("semester_id") REFERENCES "semester"("id"),
+        FOREIGN KEY("group_id") REFERENCES "group"("id"),
+        FOREIGN KEY("teacher_study_id") REFERENCES "teacher_study"("id")
+    )''')
+    con.commit()
+    con.execute('''
+    CREATE TABLE "schedule" (
+        "id"	INTEGER,
+        "date"	NUMERIC,
+        "lesson"	INTEGER,
+        "plan_id"	INTEGER,
+        "group_id"	INTEGER,
+        "teacher_id"	INTEGER,
+        PRIMARY KEY("id" AUTOINCREMENT),
+        FOREIGN KEY("plan_id") REFERENCES "semester"("id"),
+        UNIQUE("date","lesson","group_id"),
+        FOREIGN KEY("group_id") REFERENCES "group"("id"),
+        FOREIGN KEY("teacher_id") REFERENCES "teacher"("id"),
+        UNIQUE("date","lesson","teacher_id")
+    )''')
+    con.commit()
+elif db_ver != DB_VERSION:
+    print("Handling migrations")
+    # todo
+print('Using database version:', db_ver)
 
 
 class ColType(Enum):
@@ -174,14 +236,12 @@ class Table(FancyTable):
             headings=[col.dispName for col in self.columns],
             justification='center',
             enable_click_events=True,
-            max_col_width=100,
+            expand_x=True,
+            expand_y=True,
             key='tbl'
         )])
         layout.append([sg.Button('Close')])
-        w = sg.Window('Список ' + self.dispName, layout, finalize=True, resizable=True, auto_size_text=True,
-                      auto_size_buttons=True, )
-        w['tbl'].expand(True, True)
-        w['tbl'].table_frame.pack(expand=True, fill='both')
+        w = sg.Window('Список ' + self.dispName, layout, size=(400, 400), resizable=True)
         while True:
             event, values = w.read()
             if event == sg.WIN_CLOSED or event == 'Close':

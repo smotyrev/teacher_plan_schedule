@@ -1,0 +1,14 @@
+###
+## Linux
+###
+
+# Install additional packages (tk)
+sudo pacman -S tk
+
+# Installed deps, using python-pipenv
+# $ pipenv install PySimpleGUI
+#   To activate this project's virtualenv, run `pipenv shell`.
+#   Alternatively, run a command inside the virtualenv with `pipenv run`.
+
+# Run from pipenv
+pipenv run python main.pyw

@@ -1,11 +1,15 @@
+import tkinter
 from datetime import datetime as system_datetime, date as system_date
 from typing import Self
 
 import PySimpleGUI as sg
 
+DB_NAME = "data.db"             # имя файла, куда сохраняется база данных
+DB_VERSION = 1
+DB_CFG_KEY_VERSION = 1
+
 DEBUG = False
 VERBOSE = True
-DB_NAME = "data.db"             # имя файла, куда сохраняется база данных
 MONTHS_IN_SEMESTER = 4          # кол-во месяцев в семестре
 NUMBER_OF_LESSONS = 6           # кол-во уроков (часов) в 1-ом учебном дне
 
@@ -33,6 +37,17 @@ class date(system_date):
 class datetime(system_datetime):
     def __str__(self):
         return self.strftime("%A %d. %B %Y")
+
+
+def get_display_size():
+    root = tkinter.Tk()
+    root.update_idletasks()
+    root.attributes('-fullscreen', True)
+    root.state('iconic')
+    width = root.winfo_screenwidth()
+    height = root.winfo_screenheight()
+    root.destroy()
+    return width, height
 
 
 # dialog functions

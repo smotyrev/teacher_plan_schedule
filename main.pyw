@@ -5,7 +5,8 @@ import calendar
 
 from PySimpleGUI import Window
 
-from config import datetime, date, DEBUG, VERBOSE
+import config
+from config import date, DEBUG, VERBOSE
 
 import PySimpleGUI as sg
 
@@ -15,11 +16,19 @@ from table.semester import Semester
 from table.study import Study
 from table.teacher import Teacher
 
-sg.theme('SystemDefault')  # Add a touch of color
-# All the stuff inside your window.
-selGroup: Row | None = None
-selSem: Row | None = None
+# GUI tweaks
+sg.theme('SystemDefault')
+dw, dh = config.get_display_size()
+scaling = 1
+font = 'Sans'
+border_width = 1
+if dw > 2560:
+    scaling = 2
+    font = ('Sans', 16)
+    border_width = 2
+sg.set_options(scaling=scaling, font=font, border_width=border_width)
 
+# Prepare semester data
 now = date.now()
 VERBOSE and print('First day timestamp of current month:', date(now.year, now.month, 1).timestamp())
 semesters = list(Semester().query().values())
@@ -36,8 +45,7 @@ for s in semesters:
 layout = [
     [sg.B('Преподаватели', key='teacher'), sg.B('Предметы', key='study')],
     [sg.HSep()],
-    [sg.B('Расписание', k='btnSchedule'),
-     sg.Column([[sg.T('Семестр')],
+    [sg.Column([[sg.T('Семестр')],
                 [sg.Combo(semesters, default_value=default_semester, k='selSem', change_submits=True, readonly=True)]]),
      sg.Column(
          [[sg.T('Дата (день, месяц, год)')],
@@ -47,7 +55,8 @@ layout = [
               sg.Combo([], size=(5, 1), k='selYear', change_submits=True, readonly=True),
           ]]
      ),
-     ],
+
+     sg.Column([[sg.T('')], [sg.B('Расписание', k='btnSchedule')]])],
     [sg.Button('Exit')]
 ]
 
