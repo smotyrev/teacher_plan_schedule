@@ -1,5 +1,6 @@
 import sys
 from enum import Enum
+from typing import Self
 
 import PySimpleGUI as sg
 import sqlite3
@@ -155,13 +156,13 @@ class FancyTable:
     columns: (Col, ...)
 
     @staticmethod
-    def row_to_str(row: {Col: any}) -> str:
+    def row_to_str(row: dict[Col, any]) -> str:
         return str(row)
 
 
 class Row:
     __f: type[FancyTable]
-    __columnsRow: {Col: any}
+    __columnsRow: dict[Col, any]
 
     def __init__(self, row: tuple, f: type[FancyTable]) -> None:
         DEBUG and print(f"new> Row[{f.tblName}], data:", row)
@@ -172,7 +173,7 @@ class Row:
                 self.__columnsRow[col] = row[i]
             elif i < len(row):  # one--<many relation
                 self.__columnsRow[col] = row[i]
-        DEBUG and print(f"<res Row[{f.tblName}]:", self.__columnsRow)
+        DEBUG and print(f"<res Row[{f.tblName}]:", repr(self.__columnsRow))
 
     def __eq__(self, o: object) -> bool:
         return repr(self) == repr(o)
@@ -181,6 +182,7 @@ class Row:
         return hash(self.__columnsRow.values())
 
     def __str__(self) -> str:
+        DEBUG and print(f'Convert', repr(self), 'to string.', 'Table:', self.__f)
         return self.__f.row_to_str(self.__columnsRow) if self.__f is not None else self.__str__()
 
     def __repr__(self) -> str:
@@ -192,20 +194,20 @@ class Row:
         return self.__columnsRow[col]
 
     def get_row(self, col: Col, f: type[FancyTable]):
-        return self.get_row_static(col, self.__columnsRow, self.__f, f)
+        return self.get_row_static(col, self.__columnsRow, f)
 
-    @staticmethod
-    def get_row_static(src_col: Col, data: dict[Col, any], src_f: type[FancyTable], dst_f: type[FancyTable]):
+    @classmethod
+    def get_row_static(cls: type[Self], src_col: Col, data: dict[Col, any], dst_tbl: type[FancyTable]):
         if src_col.relation is None:
-            raise Exception('Column', src_col, 'in table', src_f.tblName, 'is regular field!')
+            raise Exception('Column', src_col, 'is regular field!')
         if src_col in data:                     # one--<many relation, use external_id
             external_id = data[src_col]
         else:                                   # many>--<many relation
-            external_id = data[dst_f.id]
-        raw_data = src_col.relation.query(dst_f.tblName, external_id)
+            external_id = data[dst_tbl.id]
+        raw_data = src_col.relation.query(dst_tbl.tblName, external_id)
         if type(raw_data) == list:
-            return [Row(x, dst_f) for x in raw_data]
-        return Row(raw_data, dst_f)
+            return [cls(x, dst_tbl) for x in raw_data]
+        return cls(raw_data, dst_tbl)
 
 
 class Table(FancyTable):
@@ -232,7 +234,8 @@ class Table(FancyTable):
             item = []
             for col in self.columns:
                 if col.relation is not None:
-                    item.append(row.get_row(col, col.relation.src_tbl_type))
+                    r_row = row.get_row(col, col.relation.src_tbl_type)
+                    item.append(r_row)
                 else:
                     item.append(row.get(col))
             if self.canBeDeleted:
@@ -251,7 +254,7 @@ class Table(FancyTable):
             key='tbl'
         )])
         layout.append([sg.Button('Close'), sg.Button('Add new')])
-        w = sg.Window('Список ' + self.dispName, layout, size=(400, 400), resizable=True)
+        w = sg.Window('Список ' + self.dispName, layout, size=(800, 400), resizable=True)
         while True:
             event, values = w.read()
             if event == sg.WIN_CLOSED or event == 'Close':

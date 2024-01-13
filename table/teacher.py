@@ -34,9 +34,8 @@ class TeacherStudy(Table):
 
     @staticmethod
     def row_to_str(row: dict[Col: any]) -> str:
-        print("row:", repr(row))
-        t = Row.get_row_static(TeacherStudy.teacher, row, TeacherStudy, Teacher)
-        s = Row.get_row_static(TeacherStudy.study, row, TeacherStudy, Study)
+        t = Row.get_row_static(TeacherStudy.teacher, row, Teacher)
+        s = Row.get_row_static(TeacherStudy.study, row, Study)
         return f'{t} / {s}'
 
 

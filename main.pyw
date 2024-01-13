@@ -11,6 +11,7 @@ from config import date, DEBUG, VERBOSE
 import PySimpleGUI as sg
 
 from db import Row
+from table.group import Group
 from table.plan import Plan
 from table.schedule import Schedule
 from table.semester import Semester
@@ -27,6 +28,8 @@ if dw > 2560:
     scaling = 2
     font = ('Sans', 16)
     border_width = 2
+SHOW_SCHEDULE_GROUPS_IN_ONE_LINE = int(dw / 250)
+print(SHOW_SCHEDULE_GROUPS_IN_ONE_LINE)
 sg.set_options(scaling=scaling, font=font, border_width=border_width)
 
 # Prepare semester data
@@ -45,12 +48,12 @@ for s in semesters:
 
 layout = [
     [sg.B('Преподаватели', k='teacher'), sg.B('Предметы', k='study'), sg.B('Преп./Предм.', k='pp'),
-     sg.B('Семестры', k='semester'), sg.B('Планы', k='plan')],
+     sg.B('Группы', k='group'), sg.B('Семестры', k='semester'), sg.B('Планы', k='plan')],
     [sg.HSep()],
-    [sg.Column([[sg.T('Семестр')],
+    [sg.Column([[sg.T(f'Семестр (длительность {config.MONTHS_IN_SEMESTER} - мес.)')],
                 [sg.Combo(semesters, default_value=default_semester, k='selSem', change_submits=True, readonly=True)]]),
      sg.Column(
-         [[sg.T('Дата (день, месяц, год)')],
+         [[sg.T('день, месяц, год')],
           [
               sg.Combo([], k='selDate', size=(3, 1), change_submits=True, readonly=True),
               sg.Combo(months, default_value=now.month, k='selMonth', change_submits=True, readonly=True),
@@ -108,6 +111,8 @@ while True:
             Study().show_list()
         case 'pp':
             TeacherStudy().show_list()
+        case 'group':
+            Group().show_list()
         case 'semester':
             Semester().show_list()
         case 'plan':
@@ -119,7 +124,8 @@ while True:
             _shd = Schedule()
             _close = False
             while not _close:
-                _close = _shd.show_table(values['selSem'], date(int(y), int(m), int(d)))
+                _close = _shd.show_table(values['selSem'], date(int(y), int(m), int(d)),
+                                         groups_in_one_line=SHOW_SCHEDULE_GROUPS_IN_ONE_LINE)
             continue
 
 window.close()

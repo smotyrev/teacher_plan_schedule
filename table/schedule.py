@@ -31,7 +31,7 @@ class Schedule(Table):
     teacher = Col('teacher_id', Teacher.dispName, relation=Relation(Teacher.tblName, Teacher))
     columns = (id, dateField, lesson, plan)
 
-    def show_table(self, row_semester: Row, dat: date):
+    def show_table(self, row_semester: Row, dat: date, groups_in_one_line=5):
         print(dat, repr(row_semester))
 
         # [gr_id](Group)
@@ -41,10 +41,6 @@ class Schedule(Table):
         reserved_lesson_group: dict[tuple[int, int], tuple[int, int, int]] = {}
 
         semester_id = row_semester.get(Semester.id)
-        columns = [sg.Column(
-            [[sg.T('зан.\\гр.')]] +
-            [[sg.T(f'{i}-е')] for i in range(1, NUMBER_OF_LESSONS + 1)]
-            , element_justification='c')]
 
         # Prepare WHOLE semester plans:
         plans: dict[int, Row] = {}  # [pl_id](Plan)
@@ -88,6 +84,9 @@ class Schedule(Table):
             DEBUG and print("# schedule: plan:", pl_id, "dat:", _dat, "lesson:", lesson)
 
         # Format layout date:
+        columns = []
+        all_columns = []
+        group_col_cnt = 9999
         for gr_id, group in groups.items():
             _plan_shed_items = []
             for ts_id in ts_plans[gr_id]:
@@ -123,12 +122,24 @@ class Schedule(Table):
                     sg.Combo(filtered, default_value=def_values.get(key_def), k=key_def, size=(24, 1),
                              change_submits=True, readonly=True)
                 ])
+            if groups_in_one_line > group_col_cnt:
+                group_col_cnt += 1
+            else:
+                if len(columns) > 0:
+                    all_columns.append(columns)
+                group_col_cnt = 1
+                columns = [sg.Column(
+                    [[sg.T('зан.\\гр.')]] +
+                    [[sg.T(f'{i}-е')] for i in range(1, NUMBER_OF_LESSONS + 1)]
+                    , element_justification='c')]
             columns.append(sg.Column([[sg.T(group)]] + plan_selectors))
+        if len(columns) > 0:
+            all_columns.append(columns)
         # SHOW TABLE LAYOUT
         layout = [
             [sg.T(f"{self.dispName} на"), sg.T(dat, background_color=GREENS[2]),
              sg.T('Семестр:'), sg.T(row_semester, background_color=YELLOWS[1])],
-            columns,
+            all_columns,
         ]
         w = sg.Window(f'{self.dispName} на {dat}', layout, finalize=True, resizable=True, auto_size_text=True,
                       auto_size_buttons=True, )

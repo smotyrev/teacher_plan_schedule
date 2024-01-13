@@ -12,7 +12,7 @@ DEBUG = False
 VERBOSE = True
 DATE_FORMAT = "%A %d.%m.%Y"
 MONTHS_IN_SEMESTER = 4          # кол-во месяцев в семестре
-NUMBER_OF_LESSONS = 6           # кол-во уроков (часов) в 1-ом учебном дне
+NUMBER_OF_LESSONS = 8           # кол-во уроков (часов) в 1-ом учебном дне
 
 
 # date / datetime override
