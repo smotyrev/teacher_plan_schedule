@@ -11,10 +11,11 @@ from config import date, DEBUG, VERBOSE
 import PySimpleGUI as sg
 
 from db import Row
+from table.plan import Plan
 from table.schedule import Schedule
 from table.semester import Semester
 from table.study import Study
-from table.teacher import Teacher
+from table.teacher import Teacher, TeacherStudy
 
 # GUI tweaks
 sg.theme('SystemDefault')
@@ -43,7 +44,8 @@ for s in semesters:
         break
 
 layout = [
-    [sg.B('Преподаватели', key='teacher'), sg.B('Предметы', key='study')],
+    [sg.B('Преподаватели', k='teacher'), sg.B('Предметы', k='study'), sg.B('Преп./Предм.', k='pp'),
+     sg.B('Семестры', k='semester'), sg.B('Планы', k='plan')],
     [sg.HSep()],
     [sg.Column([[sg.T('Семестр')],
                 [sg.Combo(semesters, default_value=default_semester, k='selSem', change_submits=True, readonly=True)]]),
@@ -102,10 +104,14 @@ while True:
     match event:
         case 'teacher':
             Teacher().show_list()
-            pass
         case 'study':
             Study().show_list()
-            pass
+        case 'pp':
+            TeacherStudy().show_list()
+        case 'semester':
+            Semester().show_list()
+        case 'plan':
+            Plan().show_list()
         case 'selSem' | 'selMonth' | 'selYear':
             update_date_selectors(window, values['selSem'], values['selDate'], values['selYear'], values['selMonth'])
         case 'btnSchedule':

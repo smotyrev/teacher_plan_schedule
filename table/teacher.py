@@ -8,7 +8,7 @@ class Teacher(Table):
     # Columns:
     id = Col('id', 'id', ColType.INT)
     name = Col('name', 'ФИО', ColType.STR)
-    studies = Col('studies', 'Предметы', relation=Relation(Study.tblName, join_tbl="teacher_study"))
+    studies = Col('studies', 'Предметы', relation=Relation(Study.tblName, Study, join_tbl="teacher_study"))
     columns = (id, name)
 
     @staticmethod
@@ -24,15 +24,17 @@ class Teacher(Table):
 
 class TeacherStudy(Table):
     tblName = 'teacher_study'
-    dispName = 'TS'
+    dispName = 'Преп./Предм.'
+    canBeDeleted = True
     # Columns:
     id = Col('id', 'id', ColType.INT)
-    teacher = Col('teacher_id', Teacher.dispName, relation=Relation(Teacher.tblName))
-    study = Col('study_id', Study.dispName, relation=Relation(Study.tblName))
+    teacher = Col('teacher_id', Teacher.dispName, relation=Relation(Teacher.tblName, Teacher))
+    study = Col('study_id', Study.dispName, relation=Relation(Study.tblName, Study))
     columns = (id, teacher, study)
 
     @staticmethod
     def row_to_str(row: dict[Col: any]) -> str:
+        print("row:", repr(row))
         t = Row.get_row_static(TeacherStudy.teacher, row, TeacherStudy, Teacher)
         s = Row.get_row_static(TeacherStudy.study, row, TeacherStudy, Study)
         return f'{t} / {s}'

@@ -1,10 +1,11 @@
+import sys
 from enum import Enum
 
 import PySimpleGUI as sg
 import sqlite3
 from sqlite3 import Cursor, OperationalError
 
-from config import date, DEBUG, DB_NAME, DB_CFG_KEY_VERSION, DB_VERSION
+from config import date, DEBUG, DB_NAME, DB_CFG_KEY_VERSION, DB_VERSION, DATE_FORMAT
 
 con = sqlite3.connect(DB_NAME)
 db_ver = 0
@@ -84,7 +85,8 @@ class Relation:
     __many: bool
     __cache: dict[int: list[tuple]] = {}
 
-    def __init__(self, src_tbl: str, join_tbl: str | None = None) -> None:
+    def __init__(self, src_tbl: str, src_tbl_type: type[any], join_tbl: str | None = None) -> None:
+        self.src_tbl_type = src_tbl_type
         if join_tbl is not None:
             self.__many = True
             self.__select = f"SELECT `{src_tbl}`.* FROM `{src_tbl}` " \
@@ -94,6 +96,9 @@ class Relation:
             self.__many = False
             self.__select = f"SELECT * FROM `{src_tbl}` " \
                             f"WHERE id = #id#"
+
+    def query_all(self) -> list[tuple]:
+        return list(self.src_tbl_type().query().values())
 
     def query(self, tbl: str, dst_id: int) -> list[tuple] | tuple:
         query = self.__select.replace(
@@ -144,6 +149,7 @@ class Col:
 class FancyTable:
     tblName: str
     dispName: str
+    canBeDeleted = False
     # Columns:
     id = Col('id', 'id', ColType.INT)
     columns: (Col, ...)
@@ -189,12 +195,12 @@ class Row:
         return self.get_row_static(col, self.__columnsRow, self.__f, f)
 
     @staticmethod
-    def get_row_static(src_col: Col, data: {Col: any}, src_f: type[FancyTable], dst_f: type[FancyTable]):
+    def get_row_static(src_col: Col, data: dict[Col, any], src_f: type[FancyTable], dst_f: type[FancyTable]):
         if src_col.relation is None:
             raise Exception('Column', src_col, 'in table', src_f.tblName, 'is regular field!')
         if src_col in data:                     # one--<many relation, use external_id
             external_id = data[src_col]
-        else:                               # many>--<many relation
+        else:                                   # many>--<many relation
             external_id = data[dst_f.id]
         raw_data = src_col.relation.query(dst_f.tblName, external_id)
         if type(raw_data) == list:
@@ -203,9 +209,6 @@ class Row:
 
 
 class Table(FancyTable):
-
-    def on_clicked(self, col: int, row: list[any, ...]) -> bool:
-        pass
 
     def query(self, sel='*', where='1=1') -> dict[int, Row]:
         return self.raw_query(f"SELECT {sel} FROM '{self.tblName}' WHERE {where}")
@@ -227,33 +230,144 @@ class Table(FancyTable):
         table = []
         for row in self.query().values():
             item = []
-            # item = [row.get(col) for col in columns]
             for col in self.columns:
-                item.append(row.get(col))
+                if col.relation is not None:
+                    item.append(row.get_row(col, col.relation.src_tbl_type))
+                else:
+                    item.append(row.get(col))
+            if self.canBeDeleted:
+                item.append(f'--del--')
             table.append(item)
+        headings = [col.dispName for col in self.columns]
+        if self.canBeDeleted:
+            headings.append('Удалить')
         layout.append([sg.Table(
             values=table,
-            headings=[col.dispName for col in self.columns],
+            headings=headings,
             justification='center',
             enable_click_events=True,
             expand_x=True,
             expand_y=True,
             key='tbl'
         )])
-        layout.append([sg.Button('Close')])
+        layout.append([sg.Button('Close'), sg.Button('Add new')])
         w = sg.Window('Список ' + self.dispName, layout, size=(400, 400), resizable=True)
         while True:
             event, values = w.read()
             if event == sg.WIN_CLOSED or event == 'Close':
                 w.close()
                 break
+            if event == 'Add new':
+                if self.add_new_dialog():
+                    w.close()
+                    break
+                continue
             print("ev:", event, "t:", type(event), "val:", values)
             if event[0] == 'tbl' and event[1] == '+CLICKED+':
                 (x, y) = event[2]
                 if x is not None and 0 <= x < len(table):
-                    if self.on_clicked(y, table[x]):
-                        w.close()
-                        break
+                    row = table[x]
+                    item_id = row[0]
+                    val = row[y]
+                    if val == '--del--':
+                        _event, _ = sg.Window('Delete', [
+                            [sg.T(f'Удалить {row}')],
+                            [sg.B('OK'), sg.B('Cancel')]
+                        ]).read(close=True)
+                        if _event == 'OK':
+                            sql = f'DELETE FROM `{self.tblName}` WHERE id = {item_id}'
+                            print("SQL:", sql)
+                            sql_exec(sql)
+                            w.close()
+                            break
+                    print("ROW: ", item_id, val, row)
+                    if y < len(self.columns):
+                        col = self.columns[y]
+                        if col.name == self.id.name:
+                            continue
+                        if col.relation is not None:
+                            continue
+                        if self.edit_field_dialog(col, item_id, val):
+                            w.close()
+                            break
+
+    def edit_field_dialog(self, col: Col, item_id: int, prev_val) -> bool:
+        k = '-UPD-'
+        if col.ctype == ColType.DATE:
+            dat: date = prev_val
+            inp = [sg.I(prev_val, size=(20, 0), disabled=True, k=k),
+                   sg.CalendarButton('Выб.', format=DATE_FORMAT, no_titlebar=False,
+                                     default_date_m_d_y=(dat.month, dat.day, dat.year))]
+        else:
+            inp = sg.I(prev_val, k=k)
+        event, values = sg.Window('Переименовать', [
+            [sg.T(col.dispName), inp],
+            [sg.B('OK'), sg.B('Cancel')]
+        ]).read(close=True)
+        print(event, values)
+        if event == 'OK':
+            new_val = values['-UPD-']
+            print("new_val:", repr(new_val))
+            if col.ctype == ColType.DATE:
+                dat = date.parse_str(new_val)
+                new_val = dat.timestamp()
+            if prev_val != new_val:
+                sql = f'UPDATE `{self.tblName}` SET `{col.name}`="{new_val}" WHERE id={item_id}'
+                print('SQL:', sql)
+                sql_exec(sql)
+            return True
+        return False
+
+    def add_new_dialog(self) -> bool:
+        layout = []
+        for col in self.columns:
+            k = '--' + col.name
+            if col.name == 'id':
+                continue
+            inp = []
+            match col.ctype:
+                case ColType.INT:
+                    inp = sg.I(k=k)
+                case ColType.STR:
+                    inp = sg.I(k=k)
+                case ColType.DATE:
+                    inp = [sg.I('', size=(20, 0), disabled=True, k=k),
+                           sg.CalendarButton('Выб.', format=DATE_FORMAT, no_titlebar=False)]
+                case None:
+                    if col.relation is not None:
+                        relations = col.relation.query_all()
+                        inp = sg.Combo(relations, k=k, readonly=True)
+            if type(inp) == list:
+                layout.append([sg.Push(), sg.Text(col.dispName)] + inp)
+            else:
+                layout.append([sg.Push(), sg.Text(col.dispName), inp])
+        layout.append([sg.B('OK'), sg.B('Cancel')])
+        event, values = sg.Window('Создать ' + self.dispName, layout).read(close=True)
+        if event == 'OK':
+            col_names = []
+            db_values = []
+            for col in self.columns:
+                if col.name == 'id':
+                    continue
+                col_names.append(f'`{col.name}`')
+                k = '--' + col.name
+                print("VAL:", repr(values[k]))
+                if col.relation is not None:
+                    row: Row = values[k]
+                    db_values.append(str(row.get(self.id)))
+                elif col.ctype == ColType.INT:
+                    db_values.append(str(values[k]))
+                elif col.ctype == ColType.DATE:
+                    dat = date.parse_str(values[k])
+                    print('append as ts:', dat.timestamp())
+                    db_values.append(str(dat.timestamp()))
+                else:
+                    db_values.append(f'"{values[k]}"')
+            sql = f'INSERT INTO `{self.tblName}` ({",".join(col_names)}) VALUES ({",".join(db_values)})'
+            print('SQL:', sql)
+            sql_exec(sql)
+            return True
+        return False
 
 
 def sql_exec(sql: str) -> Cursor:

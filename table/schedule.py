@@ -26,9 +26,9 @@ class Schedule(Table):
     id = Col('id', 'id', ColType.INT)
     dateField = Col('date', 'Дата', ColType.DATE)
     lesson = Col('lesson', 'Номер урока', ColType.INT)
-    plan = Col('plan_id', Plan.dispName, relation=Relation(Plan.tblName))
-    group = Col('group_id', Group.dispName, relation=Relation(Group.tblName))
-    teacher = Col('teacher_id', Teacher.dispName, relation=Relation(Teacher.tblName))
+    plan = Col('plan_id', Plan.dispName, relation=Relation(Plan.tblName, Plan))
+    group = Col('group_id', Group.dispName, relation=Relation(Group.tblName, Group))
+    teacher = Col('teacher_id', Teacher.dispName, relation=Relation(Teacher.tblName, Teacher))
     columns = (id, dateField, lesson, plan)
 
     def show_table(self, row_semester: Row, dat: date):

@@ -10,9 +10,9 @@ class Plan(Table):
     # Columns:
     id = Col('id', 'id', ctype=ColType.INT)
     hours = Col('hours', 'План часов', ctype=ColType.INT)
-    semester = Col('semester_id', Semester.dispName, relation=Relation(Semester.tblName))
-    teacher_study = Col('teacher_study_id', TeacherStudy.dispName, relation=Relation(TeacherStudy.tblName))
-    group = Col('group_id', Group.dispName, relation=Relation(Group.tblName))
+    semester = Col('semester_id', Semester.dispName, relation=Relation(Semester.tblName, Semester))
+    teacher_study = Col('teacher_study_id', TeacherStudy.dispName, relation=Relation(TeacherStudy.tblName, TeacherStudy))
+    group = Col('group_id', Group.dispName, relation=Relation(Group.tblName, TeacherStudy))
     columns = (id, hours, semester, teacher_study, group)
 
     @staticmethod

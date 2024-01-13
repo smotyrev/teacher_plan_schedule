@@ -10,6 +10,7 @@ DB_CFG_KEY_VERSION = 1
 
 DEBUG = False
 VERBOSE = True
+DATE_FORMAT = "%A %d.%m.%Y"
 MONTHS_IN_SEMESTER = 4          # кол-во месяцев в семестре
 NUMBER_OF_LESSONS = 6           # кол-во уроков (часов) в 1-ом учебном дне
 
@@ -23,7 +24,7 @@ class date(system_date):
         return cls(d.year, d.month, d.day)
 
     def __str__(self):
-        return self.strftime("%A %d.%m.%Y")
+        return self.strftime(DATE_FORMAT)
 
     def timestamp(self) -> int:
         return int(system_datetime(self.year, self.month, self.day).timestamp())
@@ -32,6 +33,13 @@ class date(system_date):
     def now(cls: type[Self]):
         now = datetime.now()
         return cls(now.year, now.month, now.day)
+
+    @classmethod
+    def parse_str(cls: type[Self], formatted_dat: str):
+        # @see DATE_FORMAT
+        _, dat = str(formatted_dat).split(' ')
+        d, m, y = str(dat).split('.')
+        return cls(int(y), int(m), int(d))
 
 
 class datetime(system_datetime):
