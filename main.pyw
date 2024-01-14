@@ -21,16 +21,13 @@ from table.teacher import Teacher, TeacherStudy
 # GUI tweaks
 sg.theme('SystemDefault')
 dw, dh = config.get_display_size()
-scaling = 1
-font = 'Sans'
-border_width = 1
 if dw > 2560:
     scaling = 2
     font = ('Sans', 16)
     border_width = 2
+    sg.set_options(scaling=scaling, font=font, border_width=border_width)
 SHOW_SCHEDULE_GROUPS_IN_ONE_LINE = int(dw / 250)
 print(SHOW_SCHEDULE_GROUPS_IN_ONE_LINE)
-sg.set_options(scaling=scaling, font=font, border_width=border_width)
 
 # Prepare semester data
 now = date.now()

@@ -12,3 +12,35 @@ sudo pacman -S tk
 
 # Run from pipenv
 pipenv run python main.pyw
+
+
+###
+## Windows
+###
+
+# Open CMD
+# Download & unzip https://www.python.org/ftp/python/3.11.7/python-3.11.7-embed-win32.zip
+cd .\python-3.11.7-embed-win32
+
+# Download https://bootstrap.pypa.io/get-pip.py
+echo >> python311._pth
+echo .\Lib >> python311._pth
+echo .\Lib\site-packages >> python311._pth
+path=%cd%;%cd%\Scripts;%path%
+.\python.exe get-pip.py
+
+pip install pytk
+pip install PySimpleGUI      
+pip install PyInstaller
+
+cd ..\teacher_plan_schedule
+pyinstaller -wF main.pyw
+
+## SYSTEMWIDE
+# Download and install https://www.python.org/ftp/python/3.12.1/python-3.12.1.exe
+# add to system PATH
+# open cmd
+cd .\teacher_plan_schedule
+pip install PySimpleGUI
+pip install PyInstaller
+pyinstaller -wF main.pyw
