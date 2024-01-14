@@ -1,5 +1,6 @@
 from db import Table, Col, ColType, Relation, Row
 from table.study import Study
+from typing import Dict, Tuple
 
 
 class Teacher(Table):
@@ -12,10 +13,10 @@ class Teacher(Table):
     columns = (id, name)
 
     @staticmethod
-    def row_to_str(row: dict[Col: any]) -> str:
+    def row_to_str(row: Dict[Col, any]) -> str:
         return str(row.get(Teacher.name))
 
-    def on_clicked(self, col: int, row: tuple[any, ...]) -> bool:
+    def on_clicked(self, col: int, row: Tuple[any, ...]) -> bool:
         col = self.columns[col]
         print(col.dispName, ":", row)
         if col.relation is not None:
@@ -33,7 +34,7 @@ class TeacherStudy(Table):
     columns = (id, teacher, study)
 
     @staticmethod
-    def row_to_str(row: dict[Col: any]) -> str:
+    def row_to_str(row: Dict[Col, any]) -> str:
         t = Row.get_row_static(TeacherStudy.teacher, row, Teacher)
         s = Row.get_row_static(TeacherStudy.study, row, Study)
         return f'{t} / {s}'

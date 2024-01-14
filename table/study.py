@@ -1,5 +1,6 @@
 from config import edit_str_dialog
 from db import Table, Col, ColType, sql_exec
+from typing import Dict
 
 import PySimpleGUI as sg
 
@@ -13,5 +14,5 @@ class Study(Table):
     columns = (id, name)
 
     @staticmethod
-    def row_to_str(row: dict[Col: any]) -> str:
+    def row_to_str(row: Dict[Col, any]) -> str:
         return row.get(Study.name)

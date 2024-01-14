@@ -2,6 +2,7 @@ from db import Table, Col, ColType, Relation, Row
 from table.group import Group
 from table.semester import Semester
 from table.teacher import TeacherStudy
+from typing import Dict
 
 
 class Plan(Table):
@@ -17,7 +18,7 @@ class Plan(Table):
     columns = (id, hours, semester, teacher_study, group)
 
     @staticmethod
-    def row_to_str(row: dict[Col, any]) -> str:
+    def row_to_str(row: Dict[Col, any]) -> str:
         ts = Row.get_row_static(Plan.teacher_study, row, TeacherStudy)
         return f'{row.get(Plan.hours)}ч. {ts}'
 

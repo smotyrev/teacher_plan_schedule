@@ -1,6 +1,6 @@
 import sys
 from enum import Enum
-from typing import Self
+from typing import Dict, List, Type
 
 import PySimpleGUI as sg
 import sqlite3
@@ -84,9 +84,9 @@ class ColType(Enum):
 class Relation:
     __select: str
     __many: bool
-    __cache: dict[int: list[tuple]] = {}
+    __cache: Dict[int, List[tuple]] = {}
 
-    def __init__(self, src_tbl: str, src_tbl_type: type[any], join_tbl: str | None = None) -> None:
+    def __init__(self, src_tbl: str, src_tbl_type: Type[any], join_tbl: "str | None" = None) -> None:
         self.src_tbl_type = src_tbl_type
         if join_tbl is not None:
             self.__many = True
@@ -98,10 +98,10 @@ class Relation:
             self.__select = f"SELECT * FROM `{src_tbl}` " \
                             f"WHERE id = #id#"
 
-    def query_all(self) -> list[tuple]:
+    def query_all(self) -> List[tuple]:
         return list(self.src_tbl_type().query().values())
 
-    def query(self, tbl: str, dst_id: int) -> list[tuple] | tuple:
+    def query(self, tbl: str, dst_id: int) -> "List[tuple] | tuple":
         query = self.__select.replace(
             '#tbl#', tbl).replace(
             '#id#', str(dst_id))
@@ -127,11 +127,11 @@ class Relation:
 class Col:
     name: str
     dispName: str
-    ctype: ColType | None
-    relation: Relation | None
+    ctype: "ColType | None"
+    relation: "Relation | None"
 
-    def __init__(self, name: str, disp_name: str, ctype: ColType | None = None,
-                 relation: Relation | None = None) -> None:
+    def __init__(self, name: str, disp_name: str, ctype: "ColType | None" = None,
+                 relation: "Relation | None" = None) -> None:
         self.name = name
         self.dispName = disp_name
         self.ctype = ctype
@@ -156,15 +156,15 @@ class FancyTable:
     columns: (Col, ...)
 
     @staticmethod
-    def row_to_str(row: dict[Col, any]) -> str:
+    def row_to_str(row: Dict[Col, any]) -> str:
         return str(row)
 
 
 class Row:
-    __f: type[FancyTable]
-    __columnsRow: dict[Col, any]
+    __f: Type[FancyTable]
+    __columnsRow: Dict[Col, any]
 
-    def __init__(self, row: tuple, f: type[FancyTable]) -> None:
+    def __init__(self, row: tuple, f: Type[FancyTable]) -> None:
         DEBUG and print(f"new> Row[{f.tblName}], data:", row)
         self.__f = f
         self.__columnsRow = {}
@@ -193,11 +193,11 @@ class Row:
             return date.fromtimestamp(self.__columnsRow[col])
         return self.__columnsRow[col]
 
-    def get_row(self, col: Col, f: type[FancyTable]):
+    def get_row(self, col: Col, f: Type[FancyTable]):
         return self.get_row_static(col, self.__columnsRow, f)
 
     @classmethod
-    def get_row_static(cls: type[Self], src_col: Col, data: dict[Col, any], dst_tbl: type[FancyTable]):
+    def get_row_static(cls: type, src_col: Col, data: Dict[Col, any], dst_tbl: Type[FancyTable]):
         if src_col.relation is None:
             raise Exception('Column', src_col, 'is regular field!')
         if src_col in data:                     # one--<many relation, use external_id
@@ -212,10 +212,10 @@ class Row:
 
 class Table(FancyTable):
 
-    def query(self, sel='*', where='1=1') -> dict[int, Row]:
+    def query(self, sel='*', where='1=1') -> Dict[int, Row]:
         return self.raw_query(f"SELECT {sel} FROM '{self.tblName}' WHERE {where}")
 
-    def raw_query(self, query: str) -> dict[int, Row]:
+    def raw_query(self, query: str) -> Dict[int, Row]:
         DEBUG and print("Query:", query)
         cur = con.cursor()
         res = {}
@@ -328,18 +328,17 @@ class Table(FancyTable):
             if col.name == 'id':
                 continue
             inp = []
-            match col.ctype:
-                case ColType.INT:
-                    inp = sg.I(k=k)
-                case ColType.STR:
-                    inp = sg.I(k=k)
-                case ColType.DATE:
-                    inp = [sg.I('', size=(20, 0), disabled=True, k=k),
-                           sg.CalendarButton('Выб.', format=DATE_FORMAT, no_titlebar=False)]
-                case None:
-                    if col.relation is not None:
-                        relations = col.relation.query_all()
-                        inp = sg.Combo(relations, k=k, readonly=True)
+            if col.ctype == ColType.INT:
+                inp = sg.I(k=k)
+            elif col.ctype == ColType.STR:
+                inp = sg.I(k=k)
+            elif col.ctype == ColType.DATE:
+                inp = [sg.I('', size=(20, 0), disabled=True, k=k),
+                       sg.CalendarButton('Выб.', format=DATE_FORMAT, no_titlebar=False)]
+            else:
+                if col.relation is not None:
+                    relations = col.relation.query_all()
+                    inp = sg.Combo(relations, k=k, readonly=True)
             if type(inp) == list:
                 layout.append([sg.Push(), sg.Text(col.dispName)] + inp)
             else:

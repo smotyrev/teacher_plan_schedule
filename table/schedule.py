@@ -170,7 +170,7 @@ class Schedule(Table):
                 return False
 
     def confirm_schedule(self, dat: date, psi: PlanScheduleItem, lesson: int, group: Row,
-                         schedule_id: int | None) -> bool:
+                         schedule_id: "int | None") -> bool:
         event, values = sg.Window('Зарезервировать час в расписании', [
             [sg.T(f'Зарезервировать {lesson}-ый урок для'), sg.T(psi.ts, background_color=TANS[0])],
             [sg.T('Дата/Группа'), sg.T(dat, background_color=TANS[1]), sg.T(group, background_color=TANS[2])],

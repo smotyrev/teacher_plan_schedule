@@ -33,7 +33,7 @@ print(SHOW_SCHEDULE_GROUPS_IN_ONE_LINE)
 now = date.now()
 VERBOSE and print('First day timestamp of current month:', date(now.year, now.month, 1).timestamp())
 semesters = list(Semester().query().values())
-default_semester: Row | None = None
+default_semester: "Row | None" = None
 months = [i + 1 for i in range(0, 12)]
 for s in semesters:
     d_start: date = s.get(Semester.date_start)
@@ -101,22 +101,21 @@ while True:
     DEBUG and print('MAIN event:', event, 'values:', values)
     if event == sg.WIN_CLOSED or event == 'Exit':  # if user closes window or clicks cancel
         break
-    match event:
-        case 'teacher':
-            Teacher().show_list()
-        case 'study':
-            Study().show_list()
-        case 'pp':
-            TeacherStudy().show_list()
-        case 'group':
-            Group().show_list()
-        case 'semester':
-            Semester().show_list()
-        case 'plan':
-            Plan().show_list()
-        case 'selSem' | 'selMonth' | 'selYear':
+    if event == 'teacher':
+        Teacher().show_list()
+    elif event == 'study':
+        Study().show_list()
+    elif event == 'pp':
+        TeacherStudy().show_list()
+    elif event == 'group':
+        Group().show_list()
+    elif event == 'semester':
+        Semester().show_list()
+    elif event == 'plan':
+        Plan().show_list()
+    elif event == 'selSem' or event == 'selMonth' or event == 'selYear':
             update_date_selectors(window, values['selSem'], values['selDate'], values['selYear'], values['selMonth'])
-        case 'btnSchedule':
+    elif event == 'btnSchedule':
             (d, m, y) = (values['selDate'], values['selMonth'], values['selYear'])
             _shd = Schedule()
             _close = False

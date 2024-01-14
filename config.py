@@ -1,6 +1,5 @@
 import tkinter
 from datetime import datetime as system_datetime, date as system_date
-from typing import Self
 
 import PySimpleGUI as sg
 
@@ -19,7 +18,7 @@ NUMBER_OF_LESSONS = 8           # кол-во уроков (часов) в 1-о�
 class date(system_date):
 
     @classmethod
-    def fromtimestamp(cls: type[Self], __timestamp: float) -> Self:
+    def fromtimestamp(cls: type, __timestamp: float):
         d = super().fromtimestamp(__timestamp)
         return cls(d.year, d.month, d.day)
 
@@ -30,12 +29,12 @@ class date(system_date):
         return int(system_datetime(self.year, self.month, self.day).timestamp())
 
     @classmethod
-    def now(cls: type[Self]):
+    def now(cls: type):
         now = datetime.now()
         return cls(now.year, now.month, now.day)
 
     @classmethod
-    def parse_str(cls: type[Self], formatted_dat: str):
+    def parse_str(cls: type, formatted_dat: str):
         # @see DATE_FORMAT
         _, dat = str(formatted_dat).split(' ')
         d, m, y = str(dat).split('.')

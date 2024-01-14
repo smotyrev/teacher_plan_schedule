@@ -3,6 +3,7 @@ import calendar
 import config
 from config import date
 from db import Table, Col, ColType
+from typing import Dict
 
 
 class Semester(Table):
@@ -24,7 +25,7 @@ class Semester(Table):
         return date(end_y, end_m, n_of_days)
 
     @staticmethod
-    def row_to_str(row: dict[Col: any]):
+    def row_to_str(row: Dict[Col, any]):
         d_start = date.fromtimestamp(row[Semester.date_start])
         d_end = Semester.get_end_date(d_start)
         date_format = "%B %d.%m.%Y"
