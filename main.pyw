@@ -37,7 +37,7 @@ default_semester: "Row | None" = None
 months = [i + 1 for i in range(0, 12)]
 for s in semesters:
     d_start: date = s.get(Semester.date_start)
-    d_end = Semester.get_end_date(d_start)
+    d_end: date = s.get(Semester.date_end)
     VERBOSE and print('SEMESTER:', s.get(Semester.id), 'start:', d_start, 'end:', d_end, 'now:', now)
     if default_semester is None and d_start <= now <= d_end:
         default_semester = s
@@ -47,7 +47,7 @@ layout = [
     [sg.B('Преподаватели', k='teacher'), sg.B('Предметы', k='study'), sg.B('Преп./Предм.', k='pp'),
      sg.B('Группы', k='group'), sg.B('Семестры', k='semester'), sg.B('Планы', k='plan')],
     [sg.HSep()],
-    [sg.Column([[sg.T(f'Семестр (длительность {config.MONTHS_IN_SEMESTER} - мес.)')],
+    [sg.Column([[sg.T(f'Семестр')],
                 [sg.Combo(semesters, default_value=default_semester, k='selSem', change_submits=True, readonly=True)]]),
      sg.Column(
          [[sg.T('день, месяц, год')],
@@ -66,7 +66,7 @@ layout = [
 def update_date_selectors(w: Window, semester: Row, def_d, new_y, new_m: int = 0):
     DEBUG and print('Update date selectors:', semester, f'(new_y: {new_y}, new_m: {new_m}, def_d: {def_d})')
     d_start: date = semester.get(Semester.date_start)
-    d_end = Semester.get_end_date(d_start)
+    d_end: date = semester.get(Semester.date_end)
     # years
     combo_y: sg.Combo = w['selYear']
     def_y = int(new_y) if new_y is not None and type(new_y) != str else d_start.year

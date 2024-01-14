@@ -1,4 +1,3 @@
-from config import edit_str_dialog
 from db import Table, Col, ColType, sql_exec
 from typing import Dict
 

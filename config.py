@@ -10,8 +10,7 @@ DB_CFG_KEY_VERSION = 1
 DEBUG = False
 VERBOSE = True
 DATE_FORMAT = "%A %d.%m.%Y"
-MONTHS_IN_SEMESTER = 4          # кол-во месяцев в семестре
-NUMBER_OF_LESSONS = 8           # кол-во уроков (часов) в 1-ом учебном дне
+NUMBER_OF_LESSON_PAIRS = 8           # кол-во пар (2 часа) в 1-ом учебном дне
 
 
 # date / datetime override
@@ -58,13 +57,11 @@ def get_display_size():
 
 
 # dialog functions
-def edit_str_dialog(prev_val: str, cb_action, *args, **kwargs) -> bool:
-    event, values = sg.Window('Rename', [
-        [sg.T('Переименовать'), sg.In(prev_val, key='-UPD-')],
+def confirm_dialog(descr: str) -> bool:
+    event, values = sg.Window('Подтверждение', [
+        [sg.T(descr)],
         [sg.B('OK'), sg.B('Cancel')]
     ]).read(close=True)
-    print(event, values)
     if event == 'OK':
-        cb_action(values['-UPD-'], *args, **kwargs)
         return True
     return False

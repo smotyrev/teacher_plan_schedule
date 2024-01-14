@@ -25,7 +25,8 @@ if db_ver < 0:
     con.execute('CREATE TABLE "group" ("id" INTEGER, "name" TEXT, PRIMARY KEY("id" AUTOINCREMENT))')
     con.execute('CREATE TABLE "teacher" ("id" INTEGER, "name" TEXT, PRIMARY KEY("id" AUTOINCREMENT))')
     con.execute('CREATE TABLE "study" ("id"	INTEGER, "name"	TEXT, PRIMARY KEY("id" AUTOINCREMENT))')
-    con.execute('CREATE TABLE "semester" ("id" INTEGER, "date_start" NUMERIC, PRIMARY KEY("id" AUTOINCREMENT))')
+    con.execute('CREATE TABLE "semester" ("id" INTEGER, "date_start" NUMERIC, "date_end" NUMERIC, '
+                'PRIMARY KEY("id" AUTOINCREMENT))')
     con.commit()
     con.execute('''
     CREATE TABLE "teacher_study" (
@@ -153,7 +154,7 @@ class FancyTable:
     canBeDeleted = False
     # Columns:
     id = Col('id', 'id', ColType.INT)
-    columns: (Col, ...)
+    columns: tuple[Col, ...]
 
     @staticmethod
     def row_to_str(row: Dict[Col, any]) -> str:
@@ -212,25 +213,26 @@ class Row:
 
 class Table(FancyTable):
 
-    def query(self, sel='*', where='1=1') -> Dict[int, Row]:
-        return self.raw_query(f"SELECT {sel} FROM '{self.tblName}' WHERE {where}")
+    def query(self, sel='*', where='1=1', order_by="id ASC") -> Dict[int, Row]:
+        sql = f"SELECT {sel} FROM '{self.tblName}' WHERE {where} ORDER BY {order_by}"
+        print(f'Table.query:', sql)
+        return self.raw_query(sql)
 
     def raw_query(self, query: str) -> Dict[int, Row]:
         DEBUG and print("Query:", query)
         cur = con.cursor()
-        res = {}
         rows = cur.execute(query).fetchall()
         cur.close()
+        res = {}
         for row in rows:
             res[row[0]] = Row(row, self.__class__)
         return res
 
-    def show_list(self):
-        layout = [
-            [sg.Text(self.dispName)],
-        ]
+    def _qry_tbl(self, order_col: Col = None, desc=False):
         table = []
-        for row in self.query().values():
+        direction = "DESC" if desc else "ASC"
+        order = f"{order_col} {direction}" if order_col is not None else f"id {direction}"
+        for row in self.query(order_by=order).values():
             item = []
             for col in self.columns:
                 if col.relation is not None:
@@ -241,9 +243,17 @@ class Table(FancyTable):
             if self.canBeDeleted:
                 item.append(f'--del--')
             table.append(item)
+        return table
+
+    def show_list(self):
+        layout = [
+            [sg.Text(self.dispName)],
+        ]
         headings = [col.dispName for col in self.columns]
         if self.canBeDeleted:
             headings.append('Удалить')
+        desc = False
+        table = self._qry_tbl()
         layout.append([sg.Table(
             values=table,
             headings=headings,
@@ -293,6 +303,12 @@ class Table(FancyTable):
                         if self.edit_field_dialog(col, item_id, val):
                             w.close()
                             break
+                elif x is not None and x < 0 and len(self.columns) > y:
+                    tbl: sg.Table = w['tbl']
+                    desc = not desc
+                    table = self._qry_tbl(self.columns[y], desc=desc)
+                    print("UPD", table)
+                    tbl.update(values=table)
 
     def edit_field_dialog(self, col: Col, item_id: int, prev_val) -> bool:
         k = '-UPD-'
@@ -340,9 +356,9 @@ class Table(FancyTable):
                     relations = col.relation.query_all()
                     inp = sg.Combo(relations, k=k, readonly=True)
             if type(inp) == list:
-                layout.append([sg.Push(), sg.Text(col.dispName)] + inp)
+                layout.append([sg.Text(col.dispName), sg.Push()] + inp)
             else:
-                layout.append([sg.Push(), sg.Text(col.dispName), inp])
+                layout.append([sg.Text(col.dispName), sg.Push(), inp])
         layout.append([sg.B('OK'), sg.B('Cancel')])
         event, values = sg.Window('Создать ' + self.dispName, layout).read(close=True)
         if event == 'OK':
