@@ -2,10 +2,13 @@
 # https://www.python.org/downloads/release/python-3117/
 # https://www.pysimplegui.org/en/latest/cookbook/#recipe-no-console-launching
 import calendar
+import locale
+import sys
 
 from PySimpleGUI import Window
 
 import config
+import excel
 from config import date, DEBUG, VERBOSE
 
 import PySimpleGUI as sg
@@ -18,6 +21,9 @@ from table.semester import Semester
 from table.study import Study
 from table.teacher import Teacher, TeacherStudy
 
+
+locale.setlocale(locale.LC_ALL, 'ru_RU')
+
 # GUI tweaks
 sg.theme('SystemDefault')
 dw, dh = config.get_display_size()
@@ -28,10 +34,15 @@ if dw > 2560:
     sg.set_options(scaling=scaling, font=font, border_width=border_width)
 SHOW_SCHEDULE_GROUPS_IN_ONE_LINE = int(dw / 250)
 print(SHOW_SCHEDULE_GROUPS_IN_ONE_LINE)
-
-# Prepare semester data
 now = date.now()
 VERBOSE and print('First day timestamp of current month:', date(now.year, now.month, 1).timestamp())
+
+#   DEBUG Excel, uncomment to show excel for today and exit
+# excel.export_groups(now, list(Group().query().values()))
+# sys.exit(0)
+# ~ DEBUG Excel
+
+# Prepare semester data
 semesters = list(Semester().query().values())
 default_semester: "Row | None" = None
 months = [i + 1 for i in range(0, 12)]
@@ -59,7 +70,7 @@ layout = [
      ),
 
      sg.Column([[sg.T('')], [sg.B('Расписание', k='btnSchedule')]])],
-    [sg.Button('Exit')]
+    [sg.Button('Exit'), sg.Push(), sg.Button('Excel')]
 ]
 
 
@@ -114,14 +125,19 @@ while True:
     elif event == 'plan':
         Plan().show_list()
     elif event == 'selSem' or event == 'selMonth' or event == 'selYear':
-            update_date_selectors(window, values['selSem'], values['selDate'], values['selYear'], values['selMonth'])
+        update_date_selectors(window, values['selSem'], values['selDate'], values['selYear'], values['selMonth'])
     elif event == 'btnSchedule':
-            (d, m, y) = (values['selDate'], values['selMonth'], values['selYear'])
-            _shd = Schedule()
-            _close = False
-            while not _close:
-                _close = _shd.show_table(values['selSem'], date(int(y), int(m), int(d)),
-                                         groups_in_one_line=SHOW_SCHEDULE_GROUPS_IN_ONE_LINE)
-            continue
+        (d, m, y) = (values['selDate'], values['selMonth'], values['selYear'])
+        dat = date(int(y), int(m), int(d))
+        _shd = Schedule()
+        _close = False
+        while not _close:
+            _close = _shd.show_table(values['selSem'], dat, groups_in_one_line=SHOW_SCHEDULE_GROUPS_IN_ONE_LINE)
+        continue
+    elif event == 'Excel':
+        (d, m, y) = (values['selDate'], values['selMonth'], values['selYear'])
+        dat = date(int(y), int(m), int(d))
+        excel.show_window(dat)
+
 
 window.close()

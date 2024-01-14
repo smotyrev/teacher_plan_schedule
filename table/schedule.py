@@ -29,7 +29,7 @@ class Schedule(Table):
     plan = Col('plan_id', Plan.dispName, relation=Relation(Plan.tblName, Plan))
     group = Col('group_id', Group.dispName, relation=Relation(Group.tblName, Group))
     teacher = Col('teacher_id', Teacher.dispName, relation=Relation(Teacher.tblName, Teacher))
-    columns = (id, dateField, lesson, plan)
+    columns = (id, dateField, lesson, plan, group, teacher)
 
     def show_table(self, row_semester: Row, dat: date, groups_in_one_line=5):
         print(dat, repr(row_semester))

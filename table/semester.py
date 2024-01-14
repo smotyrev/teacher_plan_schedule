@@ -19,7 +19,7 @@ class Semester(Table):
     def row_to_str(row: Dict[Col, any]):
         d_start = date.fromtimestamp(row[Semester.date_start])
         d_end = date.fromtimestamp(row[Semester.date_end])
-        date_format = "%B %d.%m.%Y"
+        date_format = "%b %d.%m.%Y"
         return d_start.strftime(date_format) + '  >  ' + d_end.strftime(date_format)
 
 

@@ -9,8 +9,8 @@ DB_CFG_KEY_VERSION = 1
 
 DEBUG = False
 VERBOSE = True
-DATE_FORMAT = "%A %d.%m.%Y"
-NUMBER_OF_LESSON_PAIRS = 8           # кол-во пар (2 часа) в 1-ом учебном дне
+DATE_FORMAT = "%a %d.%m.%Y"         # https://www.programiz.com/python-programming/datetime/strftime#format-code
+NUMBER_OF_LESSON_PAIRS = 8          # кол-во пар (2 часа) в 1-ом учебном дне
 
 
 # date / datetime override
