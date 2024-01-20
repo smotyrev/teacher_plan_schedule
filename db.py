@@ -1,6 +1,6 @@
 import sys
 from enum import Enum
-from typing import Dict, List, Type
+from typing import Dict, List, Type, Tuple
 
 import PySimpleGUI as sg
 import sqlite3
@@ -154,7 +154,7 @@ class FancyTable:
     canBeDeleted = False
     # Columns:
     id = Col('id', 'id', ColType.INT)
-    columns: tuple[Col, ...]
+    columns: Tuple[Col, ...]
 
     @staticmethod
     def row_to_str(row: Dict[Col, any]) -> str:

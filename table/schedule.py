@@ -1,5 +1,6 @@
 import PySimpleGUI as sg
 from PySimpleGUI import GREENS, YELLOWS, TANS
+from typing import Tuple
 
 from config import date, NUMBER_OF_LESSON_PAIRS, DEBUG, VERBOSE, confirm_dialog
 from db import Table, Row, sql_exec, Col, ColType, Relation
@@ -185,7 +186,7 @@ class Schedule(Table):
                 return False
 
     def confirm_schedule(self, dat: date, psi: PlanScheduleItem, pair: int, group: Row,
-                         schedule_ids: tuple[int, int] = ()) -> bool:
+                         schedule_ids: Tuple[int, int] = ()) -> bool:
         event, values = sg.Window('Зарезервировать час в расписании', [
             [sg.T(f'Зарезервировать {pair}-ую пару для'), sg.T(psi.ts, background_color=TANS[0])],
             [sg.T('Дата/Группа'), sg.T(dat, background_color=TANS[1]), sg.T(group, background_color=TANS[2])],

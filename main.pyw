@@ -55,8 +55,8 @@ for s in semesters:
         break
 
 layout = [
-    [sg.B('Преподаватели', k='teacher'), sg.B('Предметы', k='study'), sg.B('Преп./Предм.', k='pp'),
-     sg.B('Группы', k='group'), sg.B('Семестры', k='semester'), sg.B('Планы', k='plan')],
+    [sg.B('Семестры', k='semester'), sg.B('Преподаватели', k='teacher'), sg.B('Предметы', k='study'),
+     sg.B('Преп./Предм.', k='pp'), sg.B('Группы', k='group'), sg.B('Планы', k='plan')],
     [sg.HSep()],
     [sg.Column([[sg.T(f'Семестр')],
                 [sg.Combo(semesters, default_value=default_semester, k='selSem', change_submits=True, readonly=True)]]),
@@ -70,7 +70,7 @@ layout = [
      ),
 
      sg.Column([[sg.T('')], [sg.B('Расписание', k='btnSchedule')]])],
-    [sg.Button('Exit'), sg.Push(), sg.Button('Excel')]
+    [sg.Button('Exit'), sg.Push(), sg.Button('Excel на 5 дней', k='Excel')]
 ]
 
 
